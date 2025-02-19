@@ -4,22 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Tic-Tac-Toe</title>
+    <style>
+        #board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-gap: 10px;
+        }
+        #board div {
+            width: 100px;
+            height: 100px;
+            border: 1px solid black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
     <h1>Super Tic-Tac-Toe</h1>
     <div id="board"></div>
-    
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-
         const boardElement = document.getElementById('board');
+
         const renderBoard = (gameState) => {
             boardElement.innerHTML = '';
             gameState.forEach((cell, index) => {
                 const cellElement = document.createElement('div');
                 cellElement.textContent = cell || '';
-                cellElement.onclick = () => socket.emit('makeMove', index);
+                cellElement.addEventListener('click', () => {
+                    socket.emit('makeMove', index);
+                });
                 boardElement.appendChild(cellElement);
             });
         };

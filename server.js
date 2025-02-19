@@ -1,29 +1,29 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-let gameState = Array(9).fill(null); // Represents a 3x3 Tic-Tac-Toe board
-let currentPlayer = 'X'; // Starting player
+// Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
+
+let gameState = Array(9).fill(null);
+let currentPlayer = 'X';
 
 io.on('connection', (socket) => {
     console.log('New player connected');
 
-    // Send current game state to the new player
     socket.emit('gameState', gameState);
 
-    // Handle player moves
     socket.on('makeMove', (index) => {
         if (!gameState[index]) {
             gameState[index] = currentPlayer;
-            currentPlayer = currentPlayer === 'X' ? 'O' : 'X'; // Switch player
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
             
-            io.emit('gameState', gameState); // Broadcast updated state to all clients
-
-            // Check for win or draw conditions here (optional)
+            io.emit('gameState', gameState);
         }
     });
 
@@ -32,6 +32,8 @@ io.on('connection', (socket) => {
     });
 });
 
-server.listen(3000, () => {
-    console.log('Server is running on http://localhost:3000');
+const PORT = process.env.PORT || 3000;
+
+server.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
 });
