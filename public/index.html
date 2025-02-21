@@ -7,43 +7,77 @@
     <style>
         #board {
             display: grid;
-            grid-template-columns: repeat(3, 100px);
+            grid-template-columns: repeat(3, 1fr);
             grid-gap: 10px;
+            max-width: 600px;
+            margin: 0 auto;
         }
-        #board div {
-            width: 100px;
-            height: 100px;
+        .sub-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-gap: 5px;
+        }
+        .cell {
+            width: 50px;
+            height: 50px;
             border: 1px solid black;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 2em;
+            font-size: 1.5em;
             cursor: pointer;
+        }
+        .active-board {
+            background-color: #e0e0e0;
+        }
+        #status-display {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            font-weight: bold;
+            background-color: #f0f0f0;
+            padding: 5px 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
     </style>
 </head>
 <body>
     <h1>Super Tic-Tac-Toe</h1>
     <div id="board"></div>
+    <p id="status"></p>
+    <div id="status-display"></div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
         const boardElement = document.getElementById('board');
+        const statusElement = document.getElementById('status');
+        const statusDisplayElement = document.getElementById('status-display');
 
-        const renderBoard = (gameState) => {
+        const renderBoard = ({ gameState, currentPlayer, currentBoard }) => {
             boardElement.innerHTML = '';
-            gameState.forEach((cell, index) => {
-                const cellElement = document.createElement('div');
-                cellElement.textContent = cell || '';
-                cellElement.addEventListener('click', () => {
-                    socket.emit('makeMove', index);
+            gameState.forEach((subBoard, boardIndex) => {
+                const subBoardElement = document.createElement('div');
+                subBoardElement.className = `sub-board ${currentBoard === -1 || currentBoard === boardIndex ? 'active-board' : ''}`;
+                subBoard.forEach((cell, cellIndex) => {
+                    const cellElement = document.createElement('div');
+                    cellElement.className = 'cell';
+                    cellElement.textContent = cell || '';
+                    cellElement.addEventListener('click', () => {
+                        socket.emit('makeMove', { boardIndex, cellIndex });
+                    });
+                    subBoardElement.appendChild(cellElement);
                 });
-                boardElement.appendChild(cellElement);
+                boardElement.appendChild(subBoardElement);
             });
+            statusElement.textContent = `Current player: ${currentPlayer}`;
         };
 
         socket.on('gameState', renderBoard);
+        socket.on('id_status', (message)=> {
+            statusDisplayElement.textContent = message;
+        });
     </script>
 </body>
 </html>
