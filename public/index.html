@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Tic-Tac-Toe</title>
     <style>
-        #board {
+        /* #board {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-gap: 10px;
@@ -16,6 +16,31 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-gap: 5px;
+        }
+        .cell {
+            width: 50px;
+            height: 50px;
+            border: 1px solid black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            cursor: pointer;
+        } */
+        #board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-gap: 5px; /* Reduce the gap between sub-boards */
+            width: 500px;
+            margin: 0 auto;
+        }
+        .sub-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-gap: 2px; /* Reduce the gap between cells inside sub-boards */
+            background-color: #e0e0e0; /* Add a background color for better visibility */
+            padding: 2px; /* Add padding around sub-boards */
+            box-sizing: border-box; /* Include padding in the element's dimensions */
         }
         .cell {
             width: 50px;
