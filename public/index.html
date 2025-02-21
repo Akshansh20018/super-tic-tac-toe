@@ -40,10 +40,19 @@
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
+        #timers {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
     <h1>Super Tic-Tac-Toe</h1>
+    <div id="timers">
+        <div>Player X: <span id="timerX"></span></div>
+        <div>Player O: <span id="timerO"></span></div>
+    </div>
     <div id="board"></div>
     <p id="status"></p>
     <div id="status-display"></div>
@@ -54,6 +63,14 @@
         const boardElement = document.getElementById('board');
         const statusElement = document.getElementById('status');
         const statusDisplayElement = document.getElementById('status-display');
+        const timerXElement = document.getElementById('timerX');
+        const timerOElement = document.getElementById('timerO');
+
+        let playerSymbol;
+
+        socket.on('id_status', (message) => {
+            statusDisplayElement.textContent = message;
+        });
 
         const renderBoard = ({ gameState, currentPlayer, currentBoard }) => {
             boardElement.innerHTML = '';
@@ -74,10 +91,40 @@
             statusElement.textContent = `Current player: ${currentPlayer}`;
         };
 
-        socket.on('gameState', renderBoard);
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
         socket.on('id_status', (message)=> {
             statusDisplayElement.textContent = message;
         });
+        socket.on('gameState', ({ gameState, currentPlayer, currentBoard, timers }) => {
+            renderBoard({ gameState, currentPlayer, currentBoard });
+            timerXElement.textContent = formatTime(timers.X);
+            timerOElement.textContent = formatTime(timers.O);
+        });
+        socket.on('updateTimers', (timers) => {
+            timerXElement.textContent = formatTime(timers.X);
+            timerOElement.textContent = formatTime(timers.O);
+        });
+        socket.on('subBoardWin', ({ boardIndex, winner }) => {
+            statusElement.textContent = `Player ${winner} won sub-board ${boardIndex + 1}!`;
+        });
+        socket.on('gameWin', ({ winner, reason }) => {
+            if (reason === 'timeout') {
+                statusElement.textContent = `Player ${winner} wins due to timeout!`;
+            } else {
+                statusElement.textContent = `Player ${winner} wins the game!`;
+            }
+        });
+        socket.on('notYourTurn', () => {
+            statusElement.textContent = "It's not your turn!";
+        });
+        // socket.on('status', (message) => {
+        //     statusDisplayElement.textContent = message;
+        // });
     </script>
 </body>
 </html>
