@@ -6,7 +6,7 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
-const INITIAL_TIME = 5 * 60; // 5 minutes in seconds
+const INITIAL_TIME = 10; // 5 minutes in seconds
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -20,6 +20,7 @@ let timers = {
     O: INITIAL_TIME
 };
 let timerInterval;
+let gameActive = false;
 
 
 io.on('connection', (socket) => {
@@ -44,7 +45,7 @@ io.on('connection', (socket) => {
 
     socket.on('makeMove', ({ boardIndex, cellIndex }) => {
         const player = players.find(p => p.id === socket.id);
-        if (player && player.symbol === currentPlayer) {
+        if (player && player.symbol === currentPlayer && gameActive) {
             if (currentBoard === -1 || currentBoard === boardIndex) {
                 if (!gameState[boardIndex][cellIndex]) {
                     gameState[boardIndex][cellIndex] = currentPlayer;
@@ -69,7 +70,6 @@ io.on('connection', (socket) => {
                     const mainBoardWinner = checkMainBoardWinner();
                     if (mainBoardWinner) {
                         io.emit('gameWin', { winner: mainBoardWinner });
-                        stopTimer();
                         // resetGame();
                     }
                 }
@@ -86,23 +86,23 @@ io.on('connection', (socket) => {
 
 function startTimer() {
     clearInterval(timerInterval);
+    gameActive = true;
     timerInterval = setInterval(() => {
-        timers[currentPlayer]--;
-        if (timers[currentPlayer] <= 0) {
-            clearInterval(timerInterval);
-            const winner = currentPlayer === 'X' ? 'O' : 'X';
-            io.emit('gameWin', { winner, reason: 'timeout' });
-            stopTimer();
-            // resetGame();
-        } else {
-            io.emit('updateTimers', timers);
+        if (gameActive) {
+            timers[currentPlayer]--;
+            if (timers[currentPlayer] <= 0) {
+                gameActive = false;
+                const winner = currentPlayer === 'X' ? 'O' : 'X';
+                io.emit('updateTimers', timers);
+                io.emit('gameWin', { winner, reason: 'timeout' });
+                // resetGame();
+            } else {
+                io.emit('updateTimers', timers);
+            }
         }
     }, 1000);
 }
 
-function stopTimer() {
-    clearInterval(timerInterval);
-}
 
 function isBoardComplete(board) {
     return board.every(cell => cell !== null) || checkWinner(board) !== null;
@@ -129,7 +129,11 @@ function checkMainBoardWinner() {
         const winner = checkWinner(subBoard);
         return winner || (isBoardComplete(subBoard) ? 'T' : null);
     });
-    return checkWinner(mainBoard);
+    const winner = checkWinner(mainBoard);
+    if(winner) {
+        gameActive = false;
+    }
+    return winner;
 }
 
 function resetGame() {
