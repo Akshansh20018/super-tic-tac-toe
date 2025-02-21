@@ -6,6 +6,7 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
+const INITIAL_TIME = 5 * 60; // 5 minutes in seconds
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -14,6 +15,12 @@ let gameState = Array(9).fill().map(() => Array(9).fill(null));
 let currentPlayer = 'X';
 let currentBoard = -1; // -1 means any board can be played
 let players = [];
+let timers = {
+    X: INITIAL_TIME,
+    O: INITIAL_TIME
+};
+let timerInterval;
+
 
 io.on('connection', (socket) => {
     if (players.length < 2) {
@@ -24,12 +31,14 @@ io.on('connection', (socket) => {
         };
         players.push(player);
         socket.emit('id_status', 'Player: '+player.symbol);
-        socket.emit('assignSymbol', player.symbol);
-        socket.emit('gameState', { gameState, currentPlayer, currentBoard });
-    } else {
+        socket.emit('gameState', { gameState, currentPlayer, currentBoard, timers });
+        if (players.length === 2) {
+            startTimer();
+        }
+        } else {
         console.log('Spectator connected');
         socket.emit('id_status', 'Spectator');
-        socket.emit('gameState', { gameState, currentPlayer, currentBoard });
+        socket.emit('gameState', { gameState, currentPlayer, currentBoard, timers });
         socket.emit('You are a spectator');
     }
 
@@ -47,7 +56,8 @@ io.on('connection', (socket) => {
                         currentBoard = -1;
                     }
                     
-                    io.emit('gameState', { gameState, currentPlayer, currentBoard });
+                    startTimer();
+                    io.emit('gameState', { gameState, currentPlayer, currentBoard, timers });
 
                     // Check for a winner in the sub-board
                     const subBoardWinner = checkWinner(gameState[boardIndex]);
@@ -59,7 +69,8 @@ io.on('connection', (socket) => {
                     const mainBoardWinner = checkMainBoardWinner();
                     if (mainBoardWinner) {
                         io.emit('gameWin', { winner: mainBoardWinner });
-                        resetGame();
+                        stopTimer();
+                        // resetGame();
                     }
                 }
             }
@@ -72,6 +83,26 @@ io.on('connection', (socket) => {
         console.log('Player disconnected');
     });
 });
+
+function startTimer() {
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        timers[currentPlayer]--;
+        if (timers[currentPlayer] <= 0) {
+            clearInterval(timerInterval);
+            const winner = currentPlayer === 'X' ? 'O' : 'X';
+            io.emit('gameWin', { winner, reason: 'timeout' });
+            stopTimer();
+            // resetGame();
+        } else {
+            io.emit('updateTimers', timers);
+        }
+    }, 1000);
+}
+
+function stopTimer() {
+    clearInterval(timerInterval);
+}
 
 function isBoardComplete(board) {
     return board.every(cell => cell !== null) || checkWinner(board) !== null;
