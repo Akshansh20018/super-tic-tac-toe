@@ -38,7 +38,7 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-gap: 2px; /* Reduce the gap between cells inside sub-boards */
-            background-color: #e0e0e0; /* Add a background color for better visibility */
+            background-color: #ffffff; /* Add a background color for better visibility */
             padding: 2px; /* Add padding around sub-boards */
             box-sizing: border-box; /* Include padding in the element's dimensions */
         }
@@ -101,7 +101,10 @@
             boardElement.innerHTML = '';
             gameState.forEach((subBoard, boardIndex) => {
                 const subBoardElement = document.createElement('div');
-                subBoardElement.className = `sub-board ${currentBoard === -1 || currentBoard === boardIndex ? 'active-board' : ''}`;
+                subBoardElement.className = 'sub-board';
+                if (currentBoard === -1 || currentBoard === boardIndex) {
+                    subBoardElement.classList.add('active-board');
+                }
                 subBoard.forEach((cell, cellIndex) => {
                     const cellElement = document.createElement('div');
                     cellElement.className = 'cell';
