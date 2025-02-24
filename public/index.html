@@ -47,10 +47,20 @@
             height: 50px;
             border: 1px solid black;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             font-size: 1.5em;
             cursor: pointer;
+            position: relative;
+        }
+
+        .notation {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            font-size: 0.5em;
+            color: #888;
         }
         .active-board {
             background-color: #e0e0e0;
@@ -108,7 +118,16 @@
                 subBoard.forEach((cell, cellIndex) => {
                     const cellElement = document.createElement('div');
                     cellElement.className = 'cell';
-                    cellElement.textContent = cell || '';
+                    
+                    const notationElement = document.createElement('span');
+                    notationElement.className = 'notation';
+                    notationElement.textContent = getNotation(boardIndex, cellIndex);
+                    cellElement.appendChild(notationElement);
+
+                    const markElement = document.createElement('span');
+                    markElement.textContent = cell || '';
+                    cellElement.appendChild(markElement);
+
                     cellElement.addEventListener('click', () => {
                         socket.emit('makeMove', { boardIndex, cellIndex });
                     });
@@ -118,6 +137,12 @@
             });
             statusElement.textContent = `Current player: ${currentPlayer}`;
         };
+
+        function getNotation(boardIndex, cellIndex) {
+            const file = String.fromCharCode(97 + (boardIndex % 3) * 3 + (cellIndex % 3));
+            const rank = 9 - (Math.floor(boardIndex / 3) * 3 + Math.floor(cellIndex / 3));
+            return `${file}${rank}`;
+        }
 
         function formatTime(seconds) {
             const minutes = Math.floor(seconds / 60);
